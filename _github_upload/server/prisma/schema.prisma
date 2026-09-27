@@ -1,0 +1,260 @@
+// این فایل مدل‌های دیتابیس رو تعریف می‌کنه.
+// فعلاً از SQLite استفاده می‌کنیم (یه فایل ساده، بدون نیاز به نصب/اکانت جایی) -
+// وقتی خواستیم واقعاً دیپلوی کنیم، همینجا provider رو به postgresql عوض می‌کنیم.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// فاز ۱: مدل کاربر برای لاگین/ساین‌آپ واقعی.
+// passwordHash هیچ‌وقت خام ذخیره نمی‌شه، همیشه با bcrypt هش شده.
+// bio (ویرایش پروفایل) اختیاریه چون کاربرهای قدیمی که قبلاً ثبت‌نام کردن اینو ندارن -
+// اگه اجباری بود، migration رو دیتابیس فعلی که رکورد داره شکست می‌خورد.
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  name         String?
+  bio          String?
+  avatarImage  String
+  createdAt    DateTime @default(now())
+
+  // فاز ۲۲: آخرین باری که کاربر منوی نوتیفیکیشن رو باز کرد. هر رویدادی که بعد از این
+  // لحظه افتاده باشه «خونده‌نشده» حساب می‌شه.
+  // عمداً یه جدول Notification نساختیم: با جدول جدا، یه ویدیوی تازه از کانالی با ۵۰۰
+  // فالوور یعنی ۵۰۰ ردیف جدید، و موقع حذف اون ویدیو/کامنت باید همه‌شون رو هم دستی پاک
+  // می‌کردیم. ولی خودِ رویدادها (کامنت‌ها، ویدیوها، لایو بودن) از قبل تو دیتابیس هستن -
+  // پس فقط کافیه بپرسیم «بعد از این تاریخ چی اتفاق افتاده؟». یه ستون به‌جای یه جدول و
+  // کلی همگام‌سازی.
+  // اختیاریه چون کاربری که تا حالا زنگوله رو باز نکرده، هنوز هیچی رو ندیده
+  notificationsSeenAt DateTime?
+
+  // هر کاربر حداکثر یه کانال (Streamer) داره. اختیاریه چون هنوز راهی نیست که از تو سایت
+  // "استریمر بشی" - فقط کاربرهایی که تو seed بهشون یه Streamer وصل شده این رابطه رو دارن
+  streamer     Streamer?
+
+  // چه استریمرهایی رو فالو کرده - جدول Follow پایین‌تر تعریف شده
+  follows      Follow[]
+
+  // چه ویدیوهایی رو لایک کرده - جدول Like پایین‌تر تعریف شده
+  likes        Like[]
+
+  // فاز ۷: کامنت‌هایی که این کاربر رو کانال‌های مختلف گذاشته - جدول Comment پایین‌تر تعریف شده
+  comments     Comment[]
+
+  // فاز ۱۲: کلیپ‌هایی که این کاربر ساخته - جدول Clip پایین‌تر تعریف شده
+  clips        Clip[]
+
+  // فاز ۱۳: پیام‌های چتی که این کاربر تو کانال‌های مختلف فرستاده
+  chatMessages ChatMessage[]
+}
+
+// فاز ۲: دسته‌بندی بازی‌ها. id رو خودمون یه slug ساده (مثلاً "valorant") می‌ذاریم نه cuid،
+// چون همین id مستقیم تو آدرس صفحه (/category/:categoryId) استفاده می‌شه.
+// tags تو SQLite نمی‌تونه آرایه‌ی واقعی باشه (Prisma از String[] رو SQLite پشتیبانی نمی‌کنه)،
+// برای همین به‌صورت رشته‌ی جداشده با کاما ذخیره می‌شه (مثلاً "FPS,Competitive")
+// و تو روت API قبل از فرستادن به فرانت، به آرایه تبدیل می‌شه.
+model Category {
+  id          String     @id
+  name        String
+  boxArtImage String
+  viewerCount Int        @default(0)
+  tags        String
+  streamers   Streamer[]
+}
+
+// فاز ۲: استریمرها.
+// userId به صاحب واقعیِ کانال (User) وصله. اختیاریه چون شاید بعداً بخوایم کانالی بدون
+// کاربر واقعی هم داشته باشیم؛ unique یعنی هر کاربر حداکثر یه کانال داره (یک‌به‌یک واقعی، نه یک‌به‌چند)
+model Streamer {
+  id             String   @id @default(cuid())
+  userId         String?  @unique
+  user           User?    @relation(fields: [userId], references: [id])
+  username       String   @unique
+  avatarImage    String
+  isLive         Boolean  @default(false)
+  viewerCount    Int      @default(0)
+  streamTitle    String
+  thumbnailImage String
+  description    String
+
+  // فاز ۱۱: مثل Category.tags - چون SQLite آرایه‌ی واقعی نداره، چند لینک با کاما جدا
+  // ذخیره می‌شن (مثلاً "twitter.com/x,youtube.com/x"). اختیاریه چون همه‌ی کانال‌ها
+  // لزوماً شبکه‌ی اجتماعی برای نشون دادن ندارن
+  socialLinks    String?
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id])
+  createdAt      DateTime @default(now())
+
+  // فاز ۱۱: هدف کانال (مثلاً «۵۰۰ فالوور تا گیوی‌اوی»). فقط عنوان و عدد هدف رو استریمر
+  // خودش تنظیم می‌کنه و ذخیره می‌شه؛ عدد "الان کجاست" هیچ‌وقت اینجا ذخیره نمی‌شه - همیشه
+  // لحظه‌ای از شمارشِ واقعیِ ردیف‌های Follow محاسبه می‌شه (پایین‌تر همین مدل)، وگرنه با
+  // هر فالو/آنفالو باید یه عدد جدا رو هم دستی همگام نگه می‌داشتیم که جای خطا داره.
+  // هر دو اختیاری‌ان و با هم خالی/پر می‌شن - یعنی یا کانال اصلاً هدفی نداره، یا هردو رو داره
+  goalTitle      String?
+  goalTarget     Int?
+
+  // کیا این کانال رو فالو کردن - جدول Follow پایین‌تر تعریف شده
+  followers      Follow[]
+
+  // ویدیوها و پلی‌لیست‌های همین کانال - جدول‌هاشون پایین‌تر تعریف شدن
+  videos         Video[]
+  playlists      Playlist[]
+
+  // فاز ۴: از کِی لایو شده - برای محاسبه‌ی «چقدره لایوعه» (uptime) تو داشبورد.
+  // وقتی لایو نیست null می‌مونه؛ هر بار Go live بزنی همینو با زمان الان پر می‌کنیم،
+  // هر بار هم استریم تموم بشه دوباره null می‌شه - یعنی نمی‌گیم "چند دقیقه لایو بوده"،
+  // فقط می‌گیم "الان اگه لایوعه، از کِی" و بقیه‌ش تو فرانت حساب می‌شه
+  liveSince      DateTime?
+
+  // فاز ۷: کامنت‌هایی که رو این کانال گذاشته شدن - جدول Comment پایین‌تر تعریف شده
+  comments       Comment[]
+
+  // فاز ۱۳: پیام‌های چت این کانال - جدول ChatMessage پایین‌تر تعریف شده
+  chatMessages   ChatMessage[]
+}
+
+// فالو کردن: هر ردیف یعنی «این User این Streamer رو فالو کرده». قبلاً این تو localStorage
+// مرورگر بود (کلید mockFollows) و با عوض کردن مرورگر می‌پرید؛ حالا واقعی و رو دیتابیسه.
+// @@unique([userId, streamerId]) یعنی هر کاربر هر کانال رو فقط یه‌بار می‌تونه فالو کنه -
+// کلیک دوباره روی فالو باید idempotent باشه، نه یه ردیف تکراری بسازه.
+model Follow {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  streamerId String
+  streamer   Streamer @relation(fields: [streamerId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, streamerId])
+}
+
+// فاز ۳: ویدیوهای هر کانال. قبلاً دیتای نمونه‌ش تو src/data/videos.js بود؛ الان واقعاً
+// رو دیتابیسه. برخلاف اون فایل که "uploadedDaysAgo" (یه عدد ثابت) داشت، اینجا createdAt
+// واقعیه و "چند روز پیش" هر بار تو فرانت از روی تاریخ الان محاسبه می‌شه - وگرنه اون عدد
+// از فردای seed کردن هم غلط می‌شد.
+model Video {
+  id              String   @id @default(cuid())
+  title           String
+  streamerId      String
+  streamer        Streamer @relation(fields: [streamerId], references: [id])
+  thumbnailImage  String
+  viewCount       Int      @default(0)
+  durationMinutes Int
+
+  // فاز آپلود واقعی ویدیو: URL کامل فایل واقعی رو دیسک سرور (که با express.static سرو
+  // می‌شه). اختیاریه چون ویدیوهای seed شده‌ی قبلی فایل واقعی ندارن، فقط عنوان/تامبنیل/
+  // مدت‌زمان - این‌ها null می‌مونن، نه اینکه خطا بدن
+  videoUrl        String?
+  createdAt       DateTime @default(now())
+
+  likes           Like[]
+  playlistVideos  PlaylistVideo[]
+
+  // فاز ۱۲: بوکمارک‌های زمانی رو این ویدیو - جدول Clip پایین‌تر تعریف شده
+  clips           Clip[]
+
+  // یه کانال دوتا ویدیوی هم‌اسم نداره - همین ترکیب تو seed.js برای upsert امن (بدون
+  // ساختن رکورد تکراری با هر بار اجرا) استفاده می‌شه
+  @@unique([streamerId, title])
+}
+
+// فاز ۳: پلی‌لیست هر کانال. خودِ ترتیب و لیست ویدیوهاش تو جدول واسط PlaylistVideo پایینه
+// (نه یه فیلد آرایه‌ای)، چون SQLite/Prisma آرایه‌ی واقعی رو تو ستون پشتیبانی نمی‌کنه و
+// چون ترتیب ویدیوها تو پلی‌لیست مهمه (برای کاور و لیست نمایش).
+model Playlist {
+  id             String   @id @default(cuid())
+  title          String
+  streamerId     String
+  streamer       Streamer @relation(fields: [streamerId], references: [id])
+  createdAt      DateTime @default(now())
+
+  playlistVideos PlaylistVideo[]
+
+  // مثل Video - یه کانال دوتا پلی‌لیست هم‌اسم نداره، برای upsert امن تو seed.js
+  @@unique([streamerId, title])
+}
+
+// جدول واسط پلی‌لیست و ویدیو (رابطه‌ی چند-به-چند با ترتیب). position یعنی این ویدیو
+// چندمین ویدیوی این پلی‌لیسته - همون چیزی که قبلاً ترتیبِ آرایه‌ی videoIds نشونش می‌داد.
+model PlaylistVideo {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  videoId    String
+  video      Video    @relation(fields: [videoId], references: [id])
+  position   Int
+
+  @@unique([playlistId, videoId])
+}
+
+// فاز ۳: لایک کردن یه ویدیو. دقیقاً همون الگوی Follow (هر کاربر هر ویدیو رو فقط یه‌بار
+// می‌تونه لایک کنه). فعلاً فرانت هنوز دکمه‌ی لایک نداره - این فقط لایه‌ی دیتابیس/APIشه.
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, videoId])
+}
+
+// فاز ۷: کامنت‌های زیر کانال. برخلاف Follow/Like که هر کاربر فقط یه‌بار می‌تونه بزنه،
+// اینجا @@unique نداریم چون کامنت گذاشتن محدود به یه‌بار نیست - آدم می‌تونه چندبار کامنت بذاره.
+// حذف کامنت رو تو روتش هم صاحب خود کامنت و هم صاحب کانال (owner) می‌تونن انجام بدن.
+model Comment {
+  id         String   @id @default(cuid())
+  content    String
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  streamerId String
+  streamer   Streamer @relation(fields: [streamerId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+// فاز ۱۲: Clip یعنی یه بوکمارک زمانی رو یه ویدیوی موجود - نه یه فایل جدا و بریده‌شده.
+// این پروژه هنوز پردازش ویدیو سمت سرور (مثل ffmpeg) نداره، پس بریدن واقعی فایل امکان‌پذیر
+// نیست؛ در عوض فقط عنوان + ثانیه‌ای که پلیر رو به همون لحظه می‌بره ذخیره می‌شه.
+// هر کاربر لاگین‌شده‌ای می‌تونه رو هر ویدیویی کلیپ بسازه، نه فقط صاحب کانال - عین توییچ
+// واقعی که کلیپ‌گیری کار بیننده‌هاست، نه فقط استریمر
+model Clip {
+  id               String   @id @default(cuid())
+  title            String
+  timestampSeconds Int
+  videoId          String
+  video            Video    @relation(fields: [videoId], references: [id])
+  creatorId        String
+  creator          User     @relation(fields: [creatorId], references: [id])
+  createdAt        DateTime @default(now())
+}
+
+// فاز ۱۳: پیام‌های چت زنده. تا قبل از این، چت یه آرایه‌ی ثابت تو src/data/chatMessages.js
+// بود که با setInterval می‌چرخید - هیچ پیامی واقعاً به هیچ‌جا نمی‌رفت.
+//
+// چرا اصلاً ذخیره می‌شن و صرفاً لحظه‌ای رد نمی‌شن؟ چون اصل ثابت این پروژه از فاز ۱ همین
+// بوده که هر چیزی که کاربر می‌سازه واقعاً رو دیتابیس بمونه؛ اگه فقط لحظه‌ای بود، با یه
+// رفرش ساده کل چت خالی می‌شد و کسی که تازه وارد کانال می‌شه هیچ سابقه‌ای نمی‌دید.
+//
+// ساختارش عمداً عین Comment ئه (نویسنده + کانال + متن + زمان) و مثل اون @@unique نداره،
+// چون آدم تو چت طبیعتاً چندبار پیام می‌ده.
+// @@index رو ترکیب کانال و زمان هست چون تنها کوئری واقعیِ این جدول همینه: «آخرین n تا
+// پیامِ این کانال» - بدون ایندکس، دیتابیس باید کل جدول رو می‌گشت
+model ChatMessage {
+  id         String   @id @default(cuid())
+  content    String
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  streamerId String
+  streamer   Streamer @relation(fields: [streamerId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([streamerId, createdAt])
+}

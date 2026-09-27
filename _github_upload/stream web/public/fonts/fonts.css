@@ -1,0 +1,103 @@
+/* Quicksand: فاز ۱۴ - فونت تیترهای بخش‌ها (جایگزین Bricolage Grotesque شد، که زاویه‌دار
+   و رسمی بود و با Fredoka/Baloo 2 گرد و بامزه هم‌حس نبود). گردیه ولی نه اونقدر بامزه که
+   با Fredoka (اسم سایت) قاطی بشه - برای همین برای «تیتر» مناسب‌تره تا «اسم برند» */
+@font-face {
+  font-family: "Quicksand";
+  src: url("/fonts/quicksand/quicksand-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Quicksand";
+  src: url("/fonts/quicksand/quicksand-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Quicksand";
+  src: url("/fonts/quicksand/quicksand-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Inter: body text, usernames, chat box, UI labels */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/inter-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/inter-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/inter-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/inter-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fredoka: فقط برای اسم سایت (catstream) - یه فونت گرد و بامزه که با گربه‌ها می‌خونه.
+   عمداً هیچ‌جای دیگه‌ای استفاده نمی‌شه تا متن‌های اصلی سایت خوانا و جدی بمونن */
+@font-face {
+  font-family: "Fredoka";
+  src: url("/fonts/fredoka/fredoka-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fredoka";
+  src: url("/fonts/fredoka/fredoka-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Baloo 2: فونت اصلی متن‌های سایت (جایگزین Inter شد).
+   گرد و کلفته و با تم گربه‌ای می‌خونه؛ چهار وزنش رو برداشتیم چون تو UI هم متن معمولی
+   داریم هم لیبل نیمه‌پررنگ هم دکمه‌ی پررنگ */
+@font-face {
+  font-family: "Baloo 2";
+  src: url("/fonts/baloo/baloo-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  src: url("/fonts/baloo/baloo-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  src: url("/fonts/baloo/baloo-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  src: url("/fonts/baloo/baloo-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
