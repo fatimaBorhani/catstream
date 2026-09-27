@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- فونت‌های خودمون که فاز قبل انتخاب کردیم -->
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <title>catstream</title>
+    <script>
+      // این اسکریپت قبل از رندر شدن React اجرا می‌شه تا حالت روز/شب رو زودتر روی <html> بذاره؛
+      // بدون این، یه لحظه صفحه با تم اشتباه (مثلاً شب) نمایش داده می‌شه و بعد پرش می‌کنه به تم درست
+      ;(function () {
+        var saved = localStorage.getItem('theme')
+        var theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark'
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

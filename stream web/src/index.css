@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/*
+  این بخش Tailwind v4 هست: به‌جای فایل جداگانه‌ی tailwind.config.js،
+  توکن‌های طراحی (رنگ‌ها و فونت‌ها) رو مستقیم داخل CSS با @theme تعریف می‌کنیم.
+  خود Tailwind به ازای هر --color-x یک کلاس bg-x / text-x / border-x می‌سازه،
+  و به ازای هر --font-x یک کلاس font-x می‌سازه.
+  اینا مقادیر پیش‌فرض (حالت شب) هستن؛ حالت روز چند خط پایین‌تر override می‌شه.
+*/
+@theme {
+  /* فاز ۱۴: قبلاً Bricolage Grotesque بود که با Fredoka (لوگو) و Baloo 2 (بدنه) گرد و
+     بامزه هم‌حس نبود. Quicksand رو انتخاب کردیم چون خودش گرده ولی نه اونقدر بامزه که
+     با Fredoka قاطی بشه - یعنی تیتر از اسم سایت هنوز قابل تشخیصه */
+  --font-brand: "Quicksand", sans-serif;
+  /* Baloo 2 حروفش بزرگ‌تر و کلفت‌تر از Inter می‌شینه؛ Inter به‌عنوان پشتیبان موند
+     تا اگه فونت لود نشد، صفحه بهم نریزه */
+  --font-body: "Baloo 2", "Inter", sans-serif;
+  /* فقط برای اسم خود سایت (catstream) - عمداً جای دیگه‌ای استفاده نمی‌شه */
+  --font-logo: "Fredoka", sans-serif;
+
+  --color-bg: #0b0b0e;
+  --color-surface: #17171b;
+  --color-surface-2: #1f1f24;
+  --color-border: #2a2a30;
+  --color-text: #f2f2f5;
+  --color-text-dim: #8b8b95;
+  --color-accent: #4f8dfd;
+  --color-accent-2: #2563eb;
+  --color-online: #34d399;
+  /* دو رنگ کمکی فقط برای کارت‌های استودیو - عمداً تو حالت روز هم همینن،
+     چون صورتی/بنفش رو زمینه‌ی کرم هم بامزه و خوانا می‌مونن */
+  --color-cat-pink: #f472b6;
+  --color-cat-violet: #a78bfa;
+}
+
+/* مقدار پیش‌فرض (حالت شب) برای همون توکن سایه‌ی درونی - چون پس‌زمینه‌ی حالت شب تیره‌ست،
+   این‌جا باید روشن باشه تا اصلاً قابل دیدن باشه (حالت روزش بالاتر override می‌شه) */
+:root {
+  --shadow-inset-tint: rgba(255, 255, 255, 0.14);
+}
+
+/*
+  چون همه‌ی کامپوننت‌ها از اول با همین اسم‌های bg-bg / text-text / bg-accent و... نوشته شدن
+  (نه رنگ هاردکد)، فقط با override کردن این متغیرها زیر یه انتخاب‌گر data-theme="light"،
+  کل سایت بدون تغییر حتی یک خط JSX رنگش عوض می‌شه.
+*/
+:root[data-theme='light'] {
+  --color-bg: #f7f5f2;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1e9e2;
+  --color-border: #e8ded4;
+  --color-text: #221d19;
+  --color-text-dim: #8a7f74;
+  --color-accent: #ff5a36;
+  --color-accent-2: #e8431f;
+  --color-online: #ff5a36;
+
+  /* رنگ سایه‌ی درونی (مثلاً هاور نتایج سرچ) هم باید بین دو تم برعکس بشه:
+     تو حالت روز پس‌زمینه روشنه پس سایه باید تیره باشه تا دیده بشه؛
+     تو حالت شب (پایین‌تر، مقدار پیش‌فرض داخل :root) برعکسش - سایه‌ی روشن روی پس‌زمینه‌ی تیره */
+  --shadow-inset-tint: rgba(0, 0, 0, 0.14);
+}
+
+body {
+  @apply bg-bg text-text font-body antialiased;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+/*
+  نشانگر موس پنجه‌ی گربه. دو حالت داره: پنجه‌ی سفید برای همه‌جا، و پنجه‌ی آبی برای
+  چیزهایی که کلیک می‌شن. عددهای بعد از url نقطه‌ی دقیق کلیک روی تصویرن (hotspot) -
+  بدون اینا مرورگر گوشه‌ی بالا-چپ عکس رو نقطه‌ی کلیک حساب می‌کنه و کلیک‌ها یه‌کم کج می‌شن.
+  آخر هر خط یه مقدار استاندارد (auto/pointer/text) گذاشتیم تا اگه مرورگری عکس رو
+  لود نکرد، بدون نشانگر نمونه.
+*/
+body {
+  cursor: url('/cursors/paw.png') 7 5, auto;
+}
+
+a,
+button,
+select,
+summary,
+[role='button'] {
+  cursor: url('/cursors/paw-pointer.png') 7 5, pointer;
+}
+
+input,
+textarea {
+  cursor: text;
+}
+
+/* دکمه‌های غیرفعال نباید حس کلیک‌شدن بدن */
+button:disabled {
+  cursor: url('/cursors/paw.png') 7 5, not-allowed;
+}
